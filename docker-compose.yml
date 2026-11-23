@@ -71,6 +71,57 @@ services:
       - "127.0.0.1:8000:8000"
     restart: unless-stopped
 
+  spark-master:
+    build: ./processing
+    image: batch-data-platform/spark:3.5.3
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
+    environment:
+      SPARK_MASTER_HOST: spark-master
+    ports:
+      - "127.0.0.1:8080:8080"
+    restart: unless-stopped
+
+  spark-worker:
+    image: batch-data-platform/spark:3.5.3
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
+    environment:
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 2g
+    depends_on:
+      - spark-master
+    deploy:
+      replicas: 2
+    restart: unless-stopped
+
+  # One-shot job runner (profile "jobs"), e.g.:
+  #   docker compose run --rm spark-job /jobs/bronze_to_silver.py --quarter 2010Q1
+  spark-job:
+    image: batch-data-platform/spark:3.5.3
+    profiles: ["jobs"]
+    depends_on:
+      - spark-master
+      - minio
+    environment:
+      S3_ENDPOINT: http://minio:9000
+      # TODO: replace root credentials with least-privilege service users.
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      PSEUDONYM_SALT: ${PSEUDONYM_SALT}
+      SERVING_DB_NAME: ${SERVING_DB_NAME}
+      SERVING_DB_USER: ${SERVING_DB_USER}
+      SERVING_DB_PASSWORD: ${SERVING_DB_PASSWORD}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >
+        exec /opt/spark/bin/spark-submit
+        --master spark://spark-master:7077
+        --conf spark.driver.host=$$(hostname -i)
+        "$$@"
+      - spark-submit
+    volumes:
+      - ./processing/jobs:/jobs:ro
+
   airflow-db:
     image: postgres:16-alpine
     environment:
