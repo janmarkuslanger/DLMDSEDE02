@@ -35,6 +35,42 @@ services:
       - ./infra/terraform:/infra
     restart: "no"
 
+  # One-shot: splits the Kaggle CSV (data/online_retail_II.csv) into monthly files.
+  seed:
+    image: python:3.12-slim
+    command: ["python", "/source/seed.py", "/data/online_retail_II.csv", "/data/slices"]
+    volumes:
+      - ./source/seed.py:/source/seed.py:ro
+      - ./data:/data
+    restart: "no"
+
+  # Simulated external source: serves one CSV export per month.
+  data-source:
+    image: nginx:alpine
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    volumes:
+      - ./data/slices:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  ingestion:
+    build: ./ingestion
+    depends_on:
+      data-source:
+        condition: service_started
+      minio-provision:
+        condition: service_completed_successfully
+    environment:
+      SOURCE_URL: http://data-source
+      S3_ENDPOINT: http://minio:9000
+      # TODO: replace root credentials with a least-privilege service user.
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+
   airflow-db:
     image: postgres:16-alpine
     environment:
