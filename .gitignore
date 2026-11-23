@@ -221,3 +221,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project data (Kaggle Online Retail II, not committed - see README)
+data/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*

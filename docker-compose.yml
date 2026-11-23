@@ -1,0 +1,73 @@
+name: batch-data-platform
+
+services:
+  minio:
+    image: cgr.dev/chainguard/minio@sha256:bd92a45b821c0d85772c607ed7b49693efe78b3ffffae301b5d1b0981660de22
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio-data:/data
+    restart: unless-stopped
+
+  # One-shot: provisions buckets (one per medallion layer) via Terraform.
+  # Users and policies for least privilege are added in a later step.
+  minio-provision:
+    image: hashicorp/terraform:1.9
+    depends_on:
+      - minio
+    working_dir: /infra
+    environment:
+      TF_IN_AUTOMATION: "1"
+      TF_VAR_minio_endpoint: minio:9000
+      TF_VAR_minio_user: ${MINIO_ROOT_USER}
+      TF_VAR_minio_password: ${MINIO_ROOT_PASSWORD}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        terraform init -input=false &&
+        terraform apply -input=false -auto-approve
+    volumes:
+      - ./infra/terraform:/infra
+    restart: "no"
+
+  airflow-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${AIRFLOW_DB_USER}
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD}
+      POSTGRES_DB: ${AIRFLOW_DB_NAME}
+    volumes:
+      - airflow-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AIRFLOW_DB_USER} -d ${AIRFLOW_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  serving-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${SERVING_DB_USER}
+      POSTGRES_PASSWORD: ${SERVING_DB_PASSWORD}
+      POSTGRES_DB: ${SERVING_DB_NAME}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - serving-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SERVING_DB_USER} -d ${SERVING_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  minio-data:
+  airflow-db-data:
+  serving-db-data:
