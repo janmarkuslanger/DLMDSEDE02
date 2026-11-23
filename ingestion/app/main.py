@@ -57,7 +57,8 @@ def validate(raw: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 
 def put_parquet(df: pd.DataFrame, bucket: str, key: str) -> None:
     buf = io.BytesIO()
-    df.to_parquet(buf, index=False)
+    # Spark 3.5 cannot read nanosecond timestamps (pandas default), so write microseconds.
+    df.to_parquet(buf, index=False, coerce_timestamps="us", allow_truncated_timestamps=True)
     s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue())
 
 
