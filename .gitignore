@@ -229,3 +229,6 @@ data/
 .terraform/
 *.tfstate
 *.tfstate.*
+
+# Diagram export output
+out/

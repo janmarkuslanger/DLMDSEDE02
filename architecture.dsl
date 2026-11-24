@@ -47,7 +47,7 @@ workspace "Batch Data Platform" "C4 model for the IU portfolio Data Engineering 
                     softwareSystemInstance source
                 }
 
-                deploymentNode "airflow" "Scheduler, DAG processor and API server (standalone)" "Docker container: apache/airflow" {
+                deploymentNode "airflow" "Scheduler, DAG processor and API server (standalone)" "Docker container: custom image (apache/airflow 3.1, Python 3.10, Java, PySpark)" {
                     containerInstance platform.orchestration
                 }
                 deploymentNode "airflow-db" "" "Docker container: postgres" {
@@ -59,16 +59,16 @@ workspace "Batch Data Platform" "C4 model for the IU portfolio Data Engineering 
                 }
 
                 deploymentNode "Spark Cluster" "Standalone cluster, workers scale horizontally" "Apache Spark" {
-                    deploymentNode "spark-master" "Cluster manager" "Docker container: spark" {
+                    deploymentNode "spark-master" "Cluster manager" "Docker container: custom image (apache/spark 3.5.3 + S3A and JDBC jars)" {
                     }
-                    deploymentNode "spark-worker" "Executes the PySpark jobs" "Docker container: spark" "" 2 {
+                    deploymentNode "spark-worker" "Executes the PySpark jobs" "Docker container: custom image (apache/spark 3.5.3 + S3A and JDBC jars)" "" 2 {
                         containerInstance platform.processing
                     }
                 }
 
-                deploymentNode "minio" "" "Docker container: minio/minio" {
+                deploymentNode "minio" "" "Docker container: cgr.dev/chainguard/minio" {
                     containerInstance platform.lake
-                    infrastructureNode "minio-init" "Creates buckets, users and policies on startup (one-shot)" "Docker container: minio/mc"
+                    infrastructureNode "minio-provision" "Creates buckets, users and policies via Terraform (one-shot)" "Docker container: hashicorp/terraform"
                 }
 
                 deploymentNode "serving-db" "" "Docker container: postgres" {
