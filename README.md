@@ -6,12 +6,9 @@ C4 model: [`architecture.dsl`](architecture.dsl).
 
 ## Architecture
 
-```
-Data source (nginx) ─HTTP─► Ingestion (FastAPI) ─► MinIO: bronze ─Spark─► silver ─Spark─► gold ─JDBC─► Serving DB
-                                  ▲                      └► quarantine (invalid rows)                      ▲
-                                  │ monthly                                                    ML application reads
-                         Airflow ─┴─ spark-submit, quarterly ─► Spark cluster
-```
+![C4 container view](docs/c4-containers.png)
+
+[Legend](docs/c4-containers-key.png). Further views (system context, deployment) are in [`architecture.dsl`](architecture.dsl); `scripts/export-diagrams.sh` renders them.
 
 | Service | Image | Role |
 |---|---|---|
@@ -97,7 +94,7 @@ docker run --rm -v "$PWD":/repo -w /repo python:3.12-slim sh -c \
 
 ## Diagrams
 
-`scripts/export-diagrams.sh` writes PNGs with legend to `out/`.
+`scripts/export-diagrams.sh` writes PNGs with legend to `out/`. The container view in `docs/` is a copy.
 
 ## Troubleshooting
 
