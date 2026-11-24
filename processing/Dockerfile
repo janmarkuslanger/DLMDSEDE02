@@ -1,4 +1,5 @@
-FROM apache/spark:3.5.3-python3
+# Ubuntu/Python 3.10 variant: PySpark needs the same Python minor version on driver (Airflow image) and workers.
+FROM apache/spark:3.5.3-scala2.12-java17-python3-ubuntu
 
 # Connectors baked into the image so every node has them and no download happens at run time:
 # S3A (MinIO) and the Postgres JDBC driver. Versions match Hadoop 3.3.4 shipped with Spark 3.5.3.
