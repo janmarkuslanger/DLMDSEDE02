@@ -27,3 +27,17 @@ def test_seed_splits_rows_by_invoice_month(tmp_path):
     assert dec[0] == HEADER and len(dec) == 3  # header + 2 rows
     jan = list(csv.reader((out / "2010-01.csv").open()))
     assert len(jan) == 2
+
+
+def test_seed_reads_directly_from_zip_archive(tmp_path):
+    import zipfile
+
+    src = tmp_path / "in.zip"
+    csv_text = ",".join(HEADER) + "\n1,A,d,1,2010-02-03 10:00:00,1.0,1.0,UK\n"
+    with zipfile.ZipFile(src, "w") as zf:
+        zf.writestr("online_retail_II.csv", csv_text)
+
+    out = tmp_path / "slices"
+    subprocess.run([sys.executable, str(SEED), str(src), str(out)], check=True)
+
+    assert [p.name for p in out.iterdir()] == ["2010-02.csv"]

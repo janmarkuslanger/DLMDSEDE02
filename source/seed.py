@@ -1,15 +1,31 @@
-"""Splits the Online Retail II CSV into one file per month (YYYY-MM.csv).
+"""Splits the Online Retail II dataset into one CSV per month (YYYY-MM.csv).
 
-The slices simulate the monthly export of an external source system and are
+The input is the CSV or the ZIP archive from Kaggle (the repo ships the ZIP). The slices simulate the monthly export of an external source system and are
 served by the data-source container. Standard library only, so it runs in a
 plain python image.
 """
 import csv
+import io
 import sys
+import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 
-SRC = Path(sys.argv[1] if len(sys.argv) > 1 else "/data/online_retail_II.csv")
+SRC = Path(sys.argv[1] if len(sys.argv) > 1 else "/data/online_retail_II.zip")
 OUT = Path(sys.argv[2] if len(sys.argv) > 2 else "/data/slices")
+
+
+@contextmanager
+def open_source(path: Path):
+    """Yield a text stream for the CSV, either plain or inside a ZIP archive."""
+    if path.suffix == ".zip":
+        with zipfile.ZipFile(path) as zf:
+            name = next(n for n in zf.namelist() if n.lower().endswith(".csv"))
+            with zf.open(name) as raw, io.TextIOWrapper(raw, encoding="utf-8", newline="") as f:
+                yield f
+    else:
+        with path.open(newline="", encoding="utf-8") as f:
+            yield f
 
 
 def main() -> None:
@@ -17,7 +33,7 @@ def main() -> None:
     writers: dict[str, tuple] = {}
     rows = 0
 
-    with SRC.open(newline="", encoding="utf-8") as f:
+    with open_source(SRC) as f:
         reader = csv.reader(f)
         header = next(reader)
         date_idx = header.index("InvoiceDate")

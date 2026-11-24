@@ -60,10 +60,9 @@ Airflow (orchestration) ── spark-submit, quarterly ──► Spark cluster  
 
 Requirements: Docker with Compose v2 (about 6 GB RAM for Docker).
 
-1. **Dataset:** download *Online Retail II UCI* from Kaggle
-   (<https://www.kaggle.com/datasets/mashlyn/online-retail-ii-uci>) and place the CSV at
-   `data/online_retail_II.csv` (about 1.07 million rows, Dec 2009 – Dec 2011). It is not
-   committed to the repository.
+
+1. **Dataset:** nothing to do. *Online Retail II* (about 1.07 million rows, Dec 2009 – Dec 2011,
+   CC BY 4.0) is shipped as `data/online_retail_II.zip`, see [`data/README.md`](data/README.md).
 2. **Configuration:** `cp .env.example .env` and replace the placeholder secrets.
 3. **Start:**
    ```bash
