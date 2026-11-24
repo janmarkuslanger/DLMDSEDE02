@@ -45,9 +45,15 @@ Requires Docker with Compose v2. The dataset is included
 (`data/online_retail_II.zip`, see [`data/README.md`](data/README.md)).
 
 ```bash
-cp .env.example .env          # replace the placeholder secrets
-docker compose build          # first build: several minutes (large images)
-docker compose up -d          # then Airflow backfills everything: ~10-15 min
+# 1. Create the local config; replace every "change-me" value (passwords, salt, keys)
+cp .env.example .env
+
+# 2. Build the custom images (ingestion, Spark, Airflow); first build takes several minutes
+docker compose build
+
+# 3. Start all services in the background: MinIO and Terraform provisioning first, then
+#    seed, ingestion, Spark and Airflow, which backfills all 8 quarters (~10-15 min)
+docker compose up -d
 ```
 
 Result (8 quarters, 2010Q1–2011Q4):
