@@ -41,7 +41,7 @@ Data source (nginx) ─HTTP─► Ingestion (FastAPI) ─► MinIO: bronze ─Sp
 
 ## Run
 
-Requires Docker with Compose v2 (≥ 6 GB RAM recommended). The dataset is included
+Requires Docker with Compose v2. The dataset is included
 (`data/online_retail_II.zip`, see [`data/README.md`](data/README.md)).
 
 ```bash
@@ -49,9 +49,6 @@ cp .env.example .env          # replace the placeholder secrets
 docker compose build          # first build: several minutes (large images)
 docker compose up -d          # then Airflow backfills everything: ~10-15 min
 ```
-
-Airflow: <http://localhost:8081> (`admin` / `AIRFLOW_ADMIN_PASSWORD` from `.env`).
-Spark: <http://localhost:8080>. MinIO: <http://localhost:9001>.
 
 Result (8 quarters, 2010Q1–2011Q4):
 
@@ -70,6 +67,16 @@ docker compose run --rm spark-job /jobs/load_serving.py
 ```
 
 Reset: `docker compose down -v`.
+
+## Logins
+
+| UI | URL | User | Password (`.env`) |
+|---|---|---|---|
+| Airflow | <http://localhost:8081> | `admin` | `AIRFLOW_ADMIN_PASSWORD` |
+| MinIO console | <http://localhost:9001> | `MINIO_ROOT_USER` | `MINIO_ROOT_PASSWORD` |
+| Spark master | <http://localhost:8080> | no login | – |
+| Ingestion API docs | <http://localhost:8000/docs> | no login | – |
+| Serving DB (psql, `127.0.0.1:5433`) | – | `SERVING_DB_USER` | `SERVING_DB_PASSWORD` |
 
 ## Tests
 
