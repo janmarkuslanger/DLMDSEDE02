@@ -222,8 +222,10 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Project data (Kaggle Online Retail II, not committed - see README)
-data/
+# Project data: only the dataset archive and its README are committed; derived files are not
+data/*
+!data/online_retail_II.zip
+!data/README.md
 
 # Terraform
 .terraform/
